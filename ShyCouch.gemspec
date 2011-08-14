@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{ShyCouch}
-  s.version = ""
+  s.version = "0.0.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = [%q{Shy Inc.}, %q{Daniel Bryan}, %q{Cerales}]
@@ -23,6 +23,8 @@ Gem::Specification.new do |s|
     "LICENSE.txt",
     "README.rdoc",
     "Rakefile",
+    "ShyCouch.gemspec",
+    "VERSION",
     "lib/ShyCouch.rb",
     "test/helper.rb",
     "test/old-test.rb",
