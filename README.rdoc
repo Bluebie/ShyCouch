@@ -1,16 +1,33 @@
 = ShyCouch
 
-Description goes here.
+ShyCouch is a Ruby library for CouchDB. It's a data persistence layer that uses native objects and a simple query language, designed primarily to replace ActiveRecord in micro-frameworks like Camping. A Python version is forthcoming.
 
-== Contributing to ShyCouch
- 
-* Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
-* Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
-* Fork the project
-* Start a feature/bugfix branch
-* Commit and push until you are happy with your contribution
-* Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
-* Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
+I'm mainly putting this up for feedback at the moment. It's a complete mess, I haven't figured out where 
+
+ShyCouch does not come with an elaborate query language. It'll automatically create an 'all' query for all your models (don't use it unless you have a really good excuse not to write a custom query, doing the filtering at the application layer is hell slow), but aside from that you have to write your own map and reduce functions.
+
+= Usage
+
+erghgrehg TODO
+
+= Map/Reduce
+
+ShyCouch uses the related ShyRubyJS library to parse Ruby blocks as JavaScript. This means you can do this:
+
+	map {
+	  def function(doc)
+	    if doc.kind == "post" and !doc.hidden
+	      emit(doc)
+	  end
+	}
+
+and you'll get this:
+
+	function ( doc ) { 
+	  if( doc.kind.==("post") && !doc.hidden ) {
+	    emit(doc)
+	  } 
+	}
 
 == Copyright
 

@@ -17,10 +17,12 @@ Jeweler::Tasks.new do |gem|
   gem.name = "ShyCouch"
   gem.homepage = "http://github.com/Cerales/ShyCouch"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = %Q{Ruby API for CouchDB, designed to work with the Camping micro-framework.}
+  gem.description = %Q{Ruby API for CouchDB, designed to work with the Camping micro-framework.}
   gem.email = "danbryan@gmail.com"
-  gem.authors = ["Cerales"]
+  gem.authors = ["Shy Inc.", "Daniel Bryan", "Cerales"]
+  gem.add_dependency "ShyRubyJS"
+  gem.add_dependency "sourcify", ">=0"
   # dependencies defined in Gemfile
 end
 Jeweler::RubygemsDotOrgTasks.new
