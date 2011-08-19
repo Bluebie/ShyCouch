@@ -10,6 +10,6 @@ class TestCouchDBFactory < Test::Unit::TestCase
   end
   
   def test_create_database
-    assert_kind_of(ShyCouch::CouchDBAPI, ShyCouch::Create.go(@valid_settings))
+    assert_kind_of(ShyCouch::CouchDBAPI, ShyCouch::Connection.Create(@valid_settings))
   end
 end

@@ -32,42 +32,9 @@ module ShyCouch
     end
   end
 
-  
   module Data
-    class Model < Hash
-      # takes hash that will be the document contents as well as an array of expected keys for validation
-      # todo - enforce keys that work as attrs
-
-      def initialize(hash=nil, requirements)
-        @requirements = requirements
-        merge!(hash) if hash
-        raise TypeError unless valid? #TODO - should raise a more specific and useful error
-      end
-
-      def method_missing(name, *args)
-        # Makes the object behave as if the hash keys are instance properties with attr_accessors
-        if name.to_s
-          if name[name.length-1] == "="
-            key = name[0, name.length-1]
-            if self.key?(key)
-              self[key] = args
-              return args
-            end
-          else
-            return self[name.to_s] unless !self[name.to_s]
-          end
-        end
-        super
-      end
-      
-      def respond_to?(method)
-        # so that testing for whether it responds to a method is equivalent to testing for the existence of a key
-        return true if self.key?(method.to_s)
-        super
-      end
-    end
     
-    class CouchDocument < Model
+    class CouchDocument < Hash
       class << self
         # allows instance.class.requirements to be called
         attr_accessor :requirements
@@ -77,8 +44,16 @@ module ShyCouch
         # Assumes that the "kind" is the class name unless explicitly stated otherwise
         # TODO - maybe just force it to be the class name no matter what tbh
         hash["kind"] = self.class.to_s unless hash["kind"]
-        super(hash, @requirements)
+        merge!(hash)
+        raise TypeError unless valid?
+        # super(hash)
       end
+      
+      # def initialize(hash=nil, requirements)
+      #   @requirements = requirements
+      #   merge!(hash) if hash
+      #   raise TypeError unless valid? #TODO - should raise a more specific and useful error
+      # end
       
       def self.all
         database = CouchDatabase.new($settings)
@@ -134,7 +109,31 @@ module ShyCouch
       rescue JSON::GeneratorError
         false
       end
+      
+      def method_missing(m, *a)
+        # Makes the object behave as if the hash keys are instance properties with attr_accessors
+        # Had a dozen lines or so for this and found a one-line implementation of the same thing in Camping.
+        m.to_s =~ /=$/ ? self[$`] = a[0] : a == [] ? self[m.to_s] : super
+      end
+      
+      def respond_to?(method)
+        # so that testing for whether it responds to a method is equivalent to testing for the existence of a key
+        self.key?(method.to_s) ? true : super
+      end
+      
     end
+
+    class Design < CouchDocument
+      # this is used to manage design documents
+      # In practise, the Controllers should be a list of classes corresponding to design documents
+
+      def map(&block);end
+
+      def reduce(&block);end
+
+      def push;end #must override push in order to set the ID
+    end
+
   end
 
   module Fields

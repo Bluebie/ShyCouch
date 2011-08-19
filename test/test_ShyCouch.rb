@@ -26,3 +26,7 @@ require_relative 'test_fields'
 require_relative 'test_couch_document'
 
 require_relative 'test_camping_integration'
+
+require_relative 'test_couchdb_factory'
+
+require_relative 'test_design_documents'
