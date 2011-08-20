@@ -3,22 +3,40 @@
 # Built primarily to allow Camping apps to use CouchDB for data persistence 
 # ShyRubyJS is library used to build map and reduce functions from Ruby blocks
 
+# Add the directory containing this file to the start of the load path if it
+# isn't there already.
+$:.unshift(File.dirname(__FILE__)) unless
+  $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
+
 require 'net/http'
 require 'json'
 require 'resolv'
 require 'shyrubyjs'
+# require everything from the 'ShyCouch' subdirectory
+Dir.new(File.dirname(__FILE__)+'/ShyCouch').each { |f| require 'shycouch/' + f.split('.')[0] unless f == '.' or f == '..' }
 
 module Kernel
   def shycouch
     $database = ShyCouch::Connection.Create
   end
+  
+  
 end
+
+module Camping
+  module Models
+    CouchDocument = ShyCouch::Data::CouchDocument
+  end
+end
+
 
 module ShyCouch
   
   attr_accessor :database
   
   class Connection
+    # Test that the database is accessible and give back a CouchDBAPI object if so.
+    # Doesn't actually gets instantiated - is just here to allow nice ShyCouch::Connection.Create syntax
     def self.Create(settings=nil)
       settings = $settings unless settings
       database = CouchDBAPI.new(settings["db"]["host"], settings["db"]["port"], settings["db"]["name"], settings["db"]["user"], settings["db"]["password"])
@@ -32,132 +50,6 @@ module ShyCouch
     end
   end
 
-  module Data
-    
-    class CouchDocument < Hash
-      class << self
-        # allows instance.class.requirements to be called
-        attr_accessor :requirements
-      end
-      
-      def initialize(hash={})
-        # Assumes that the "kind" is the class name unless explicitly stated otherwise
-        # TODO - maybe just force it to be the class name no matter what tbh
-        hash["kind"] = self.class.to_s unless hash["kind"]
-        merge!(hash)
-        raise TypeError unless valid?
-        # super(hash)
-      end
-      
-      # def initialize(hash=nil, requirements)
-      #   @requirements = requirements
-      #   merge!(hash) if hash
-      #   raise TypeError unless valid? #TODO - should raise a more specific and useful error
-      # end
-      
-      def self.all
-        database = CouchDatabase.new($settings)
-        database.get()
-      end
-      
-      def self.requires(*requirements)
-        @requirements = requirements
-      end
-      
-      def add_key(key, value=nil)
-        # The attr value assignment operator has been overriden, but it checks for the existence of a key.
-        # And therefore the user has to explicitly call this method first.
-        self[key] = value
-      end
-      
-      def attr_keys
-        # returns the keys for all the attrs that aren't the id or rev
-        attr_keys = []
-        self.map { |k,v|
-          attr_keys << k unless k == "_id" or k == "_rev"
-        }
-        return attr_keys
-      end
-      
-      def _requirements
-        #TODO - hm
-        return self.class.requirements
-      end
-      
-      def pull(database=nil)
-        database = $database unless database
-        new_doc = database.pull_document(self)
-        if new_doc
-          self.clear
-          self.merge! new_doc
-        end
-      end
-      
-      def push(database = nil)
-        # assumes $database unless it receives a database argument
-        database = $database unless database
-        res = database.push_document(self)
-        self["_id"] = res["id"]
-        self["_rev"] = res["rev"]
-        return res
-      end
-      
-      def valid?; to_json ? true : false; end
-      
-      def to_json
-        JSON::generate(self)
-      rescue JSON::GeneratorError
-        false
-      end
-      
-      def method_missing(m, *a)
-        # Makes the object behave as if the hash keys are instance properties with attr_accessors
-        # Had a dozen lines or so for this and found a one-line implementation of the same thing in Camping.
-        m.to_s =~ /=$/ ? self[$`] = a[0] : a == [] ? self[m.to_s] : super
-      end
-      
-      def respond_to?(method)
-        # so that testing for whether it responds to a method is equivalent to testing for the existence of a key
-        self.key?(method.to_s) ? true : super
-      end
-      
-    end
-
-    class Design < CouchDocument
-      # this is used to manage design documents
-      # In practise, the Controllers should be a list of classes corresponding to design documents
-
-      def map(&block);end
-
-      def reduce(&block);end
-
-      def push;end #must override push in order to set the ID
-    end
-
-  end
-
-  module Fields
-    #TODO - lightweight validation framework 
-    
-    class Email_Addr < String
-      def valid?
-        # Valid if: one and only one '@'; at least one "." after the '@'; an mx record can be resolved at the domain
-        valid_address? and valid_domain?
-      end
-      def valid_address?
-        self.split("@").length == 2 and self.split("@")[1].split(".").length >= 2
-        
-      end
-      def valid_domain?
-        domain = self.match(/\@(.+)/)[1]
-        Resolv::DNS.open { |dns| dns.getresources(domain, Resolv::DNS::Resource::IN::MX) }.size > 0 ? true : false
-        rescue Resolv::ResolvError
-          false
-      end
-    end
-  end
-
-  #TODO - split this stuff into modules too
   class CouchDBAPI
   	def initialize(host, port, name, user, password)
   		@host, @port, @name, @user, @password = host, port, name, user, password
