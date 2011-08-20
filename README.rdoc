@@ -1,6 +1,6 @@
 = ShyCouch
 
-ShyCouch is a Ruby library for CouchDB. It's a data persistence layer that uses native objects and a simple query language, designed primarily to replace ActiveRecord in micro-frameworks like Camping. A Python version is forthcoming.
+ShyCouch is a Ruby library for CouchDB. It's a data persistence layer that uses native objects and a simple query language, designed primarily to replace ActiveRecord in Camping. A Python version is forthcoming.
 
 I'm mainly putting this up for feedback at the moment. It's a complete mess, I haven't figured out where 
 
@@ -8,18 +8,82 @@ ShyCouch does not come with an elaborate query language. It'll automatically cre
 
 = Usage
 
-erghgrehg TODO
+put this in your helpers (this isn't entiiiirely working yet):
+
+== Models
+
+You don't need to define entity relationships or anything. Your models can just look like this:
+
+	module Food::Models
+	  class Recipe < CouchDocument; end
+	end
+
+You can do a bit more if you want:
+
+	module Food::Models
+	  class Recipe < CouchDocument
+	    needs :ingredients
+	    needs :directions
+	    suggests :cost
+	  end
+	end
+	
+== Helpers
+
+You define your map & reduce functions - your Couch views - in your Helpers.
+
+	module Food::Helpers
+
+	  design do
+	    view all_recipes do
+	      map do
+	        def function(doc)
+	          if doc.kind == "recipe"
+	            emit(doc)
+  	        end
+	      end
+    
+	     reduce do
+	        # whatever
+	      end
+
+	    end
+
+	    view ingredients do
+	      # a different view
+	    end
+	  end
+
+You can then call your views by name in your controllers:
+
+	module Food::Controllers
+	  class Recipes < R '/recipes/'
+	    @recipes = View.all_recipes
+	    render :recipes
+	  end
+	end
+	
+Views give you back a special JSON hash where you can treat the keys as object attributes and all that:
+	
+	module Food::Views
+	  recipes.each do |recipe|
+	    h2 recipe.title
+	    recipe.ingredients.each do |ingredient|
+	      p "#{ingredient.name}: #{ingredient.quantity}"
+	    end
+	  end
+	end
 
 = Map/Reduce
 
 ShyCouch uses the related ShyRubyJS library to parse Ruby blocks as JavaScript. This means you can do this:
 
-	map {
+	map do
 	  def function(doc)
 	    if doc.kind == "post" and !doc.hidden
 	      emit(doc)
 	  end
-	}
+	end
 
 and you'll get this:
 
