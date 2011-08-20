@@ -32,27 +32,27 @@ You can do a bit more if you want:
 
 You define your map & reduce functions - your Couch views - in your Helpers.
 
-			module Food::Helpers
+	module Food::Helpers
 
-			  design do
-			    view all_recipes do
-			      map do
-			        def function(doc)
-			          if doc.kind == "recipe"
-			            emit(doc)
-		  	        end
-			      end
+	  design do
+	    view all_recipes do
+	      map do
+	        def function(doc)
+	          if doc.kind == "recipe"
+	            emit(doc)
+  	        end
+	      end
     
-			     reduce do
-			        # whatever
-			      end
+	     reduce do
+	        # whatever
+	      end
 
-			    end
+	    end
 
-			    view ingredients do
-			      # a different view
-			    end
-			  end
+	    view ingredients do
+	      # a different view
+	    end
+	  end
 
 You can then call your views by name in your controllers:
 
