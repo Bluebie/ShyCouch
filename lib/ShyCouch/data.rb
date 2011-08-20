@@ -63,7 +63,7 @@ module ShyCouch
     
       def push(database = nil)
         # assumes $database unless it receives a database argument
-        database = $database unless database
+        database = $couchdb unless database
         res = database.push_document(self)
         self["_id"] = res["id"]
         self["_rev"] = res["rev"]

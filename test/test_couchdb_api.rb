@@ -4,7 +4,7 @@ require_relative '../lib/ShyCouch.rb'
 class TestCouchDBAPI < Test::Unit::TestCase
   def setup
     valid_settings = $settings
-    $database = ShyCouch::Connection.Create(valid_settings)
+    $database = ShyCouch.create(valid_settings)
   end
   
   def teardown

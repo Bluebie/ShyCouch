@@ -6,11 +6,11 @@ class CouchDocumentTests# < Test::Unit::TestCase
   class TestDocumentCreation < Test::Unit::TestCase
     def setup
       valid_settings = $settings
-      @database = ShyCouch::Connection.Create(valid_settings)
+      @couchdb = ShyCouch.create(valid_settings)
     end
     def teardown
-      @database.delete_database
-      @database = nil
+      @couchdb.delete_database
+      @couchdb = nil
     end
 
     def test_create_from_empty_hash
@@ -53,7 +53,8 @@ class CouchDocumentTests# < Test::Unit::TestCase
     # assumes success of the stuff in TestDocumentPulling
     def setup
       valid_settings = $settings
-      $database = ShyCouch::Connection.Create(valid_settings)
+      $couchdb = ShyCouch.create(valid_settings)
+      
       
       @valid_documents = [
         ShyCouch::Data::CouchDocument.new({"kind"=>"post", "message"=>"BUY TRAMADOL ONLINE!!"}),
@@ -73,8 +74,8 @@ class CouchDocumentTests# < Test::Unit::TestCase
       @invalid_documents = nil # make sure user can't set rev maybe? or is that legal?
     end
     def teardown
-      $database.delete_database
-      $database = nil
+      $couchdb.delete_database
+      $couchdb = nil
       # delete the database
     end
     
@@ -97,7 +98,7 @@ class CouchDocumentTests# < Test::Unit::TestCase
         assert(doc["_id"])
         assert(doc["_rev"])
         # get the new doc
-        newDoc = $database.get_document(doc._id)
+        newDoc = $couchdb.get_document(doc._id)
         # test equality of all the attributes aside from id and rev on the new document
         doc.attr_keys.each { |k|
           assert_equal(doc["k"], newDoc["k"])
@@ -119,7 +120,7 @@ class CouchDocumentTests# < Test::Unit::TestCase
         assert(res["ok"])
         
         # pull it from the database again
-        checkDoc = $database.get_document(doc._id)
+        checkDoc = $couchdb.get_document(doc._id)
         
         # check that the one from the database has all the new attributes
         assert_equal(doc.owner, checkDoc.owner)

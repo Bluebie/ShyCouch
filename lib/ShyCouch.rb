@@ -15,35 +15,43 @@ require 'shyrubyjs'
 # require everything from the 'ShyCouch' subdirectory
 Dir.new(File.dirname(__FILE__)+'/ShyCouch').each { |f| require 'shycouch/' + f.split('.')[0] unless f == '.' or f == '..' }
 
-module Kernel
-  def shycouch
-    $database = ShyCouch::Connection.Create
-  end
-  
-  
-end
-
-module Camping
-  module Models
-    CouchDocument = ShyCouch::Data::CouchDocument
-  end
-end
-
 
 module ShyCouch
-  
-  attr_accessor :database
-  
-  class Connection
-    # Test that the database is accessible and give back a CouchDBAPI object if so.
-    # Doesn't actually gets instantiated - is just here to allow nice ShyCouch::Connection.Create syntax
-    def self.Create(settings=nil)
+  class << self
+    def goes(m)
+      Camping.goes m
+      c = %{
+        #{m.to_s}::Models::CouchDocument = ShyCouch::Data::CouchDocument
+      }
+      eval(c)
+      ShyCouch.create
+    end
+    
+    def create(settings=nil)
+      $couchdb = ShyCouch.getDB(settings)
+    end
+    
+    def getDB(settings=nil)
       settings = $settings unless settings
       database = CouchDBAPI.new(settings["db"]["host"], settings["db"]["port"], settings["db"]["name"], settings["db"]["user"], settings["db"]["password"])
       puts database.connect unless database.connect["ok"]
       database.create unless database.on_server?
       return database
     end
+    
+  end
+  attr_accessor :database
+  
+  class Connection
+    # Test that the database is accessible and give back a CouchDBAPI object if so.
+    # Doesn't actually gets instantiated - is just here to allow nice ShyCouch::Connection.Create syntax
+    # def self.Create(settings=nil)
+    #   settings = $settings unless settings
+    #   database = CouchDBAPI.new(settings["db"]["host"], settings["db"]["port"], settings["db"]["name"], settings["db"]["user"], settings["db"]["password"])
+    #   puts database.connect unless database.connect["ok"]
+    #   database.create unless database.on_server?
+    #   return database
+    # end
     
     def push_generic_views
       #TODO 
