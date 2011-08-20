@@ -53,6 +53,7 @@ You define your map & reduce functions - your Couch views - in your Helpers (not
 	      # a different view
 	    end
 	  end
+	end
 
 You can then call your views by name in your controllers:
 
@@ -66,10 +67,12 @@ You can then call your views by name in your controllers:
 Views give you back a special JSON hash where you can treat the keys as object attributes and all that:
 	
 	module Food::Views
-	  recipes.each do |recipe|
-	    h2 recipe.title
-	    recipe.ingredients.each do |ingredient|
-	      p "#{ingredient.name}: #{ingredient.quantity}"
+	  def recipes
+	    recipes.each do |recipe|
+	      h2 recipe.title
+	      recipe.ingredients.each do |ingredient|
+	        p "#{ingredient.name}: #{ingredient.quantity}"
+	      end
 	    end
 	  end
 	end
