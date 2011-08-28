@@ -38,7 +38,7 @@ class CouchDocumentTests# < Test::Unit::TestCase
     def test_create_from_fixnum
       # Ensure no doc creation with fixnum argument
       fixnum = 1
-      assert_raises TypeError do
+      assert_raise TypeError do
         doc = ShyCouch::Data::CouchDocument.new(fixnum)
       end
     end
@@ -110,9 +110,9 @@ class CouchDocumentTests# < Test::Unit::TestCase
       @existing_valid_documents.each { |doc| 
         # add some more attributes
         assert(doc._rev)
-        doc.add_key("owner", "the guvvmint")
-        doc.add_key("buttonCount")
-        doc.add_key("friends")
+        doc["owner"] = "the guvvmint"
+        doc["buttonCount"] = nil
+        doc["friends"] = nil
         doc.buttonCount = 5
         doc.friends = ["alan", "alex", "all me other mates"]
         
@@ -132,7 +132,7 @@ class CouchDocumentTests# < Test::Unit::TestCase
     def test_illegal_change_to_rev
       @existing_valid_documents.each { |doc|
         doc._rev = "hurr"
-        assert_raises RuntimeError do
+        assert_raise RuntimeError do
           res = doc.push
         end
       }

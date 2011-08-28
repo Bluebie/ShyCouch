@@ -11,63 +11,37 @@ $:.unshift(File.dirname(__FILE__)) unless
 require 'net/http'
 require 'json'
 require 'resolv'
-require 'shyrubyjs'
+# require 'shyrubyjs'
+require '~/dev/gems/ShyRubyJS/lib/ShyRubyJS'
 # require everything from the 'ShyCouch' subdirectory
 Dir.new(File.dirname(__FILE__)+'/ShyCouch').each { |f| require 'shycouch/' + f.split('.')[0] unless f == '.' or f == '..' }
 
 
 module ShyCouch
   class << self
-    def goes(m)
-      Camping.goes m
-      c = %{
-        #{m.to_s}::Models::CouchDocument = ShyCouch::Data::CouchDocument
-      }
-      eval(c)
-      ShyCouch.create
-    end
     
-    def create(settings=nil)
+    def create(settings=nil) #TODO - change this
       $couchdb = ShyCouch.getDB(settings)
     end
     
     def getDB(settings=nil)
-      settings = $settings unless settings
-      database = CouchDBAPI.new(settings["db"]["host"], settings["db"]["port"], settings["db"]["name"], settings["db"]["user"], settings["db"]["password"])
-      puts database.connect unless database.connect["ok"]
+      settings = $couch_settings unless settings
+      database = CouchDatabase.new(settings)
+      puts database.connect unless database.connect["ok"] #TODO - hm
       database.create unless database.on_server?
       return database
     end
     
   end
   attr_accessor :database
-  
-  class Connection
-    # Test that the database is accessible and give back a CouchDBAPI object if so.
-    # Doesn't actually gets instantiated - is just here to allow nice ShyCouch::Connection.Create syntax
-    # def self.Create(settings=nil)
-    #   settings = $settings unless settings
-    #   database = CouchDBAPI.new(settings["db"]["host"], settings["db"]["port"], settings["db"]["name"], settings["db"]["user"], settings["db"]["password"])
-    #   puts database.connect unless database.connect["ok"]
-    #   database.create unless database.on_server?
-    #   return database
-    # end
-    
-    def push_generic_views
-      #TODO 
-    end
-  end
 
-  class CouchDBAPI
-  	def initialize(host, port, name, user, password)
-  		@host, @port, @name, @user, @password = host, port, name, user, password
-  		@views = []
-  		@server = CouchServerConnection.allocate
+  class ShyCouchError < StandardError; end
+
+  class CouchDatabase
+  	def initialize(settings)
+      # args = explode_settings(args) if args.size == 1
+	    init(settings)
   	end
-    # 
-    # def initialize(*settings)
-    #   @host, @port, @name, @user, @password = settings["db"]["host"], settings["db"]["port"], settings["db"]["name"], settings["db"]["user"], settings["db"]["password"]
-    #     end
 
   	attr_accessor :server, :name, :host, :port, :views
 
@@ -134,6 +108,14 @@ module ShyCouch
     end
     
     private 
+    
+    def init(settings)
+		  db_settings = settings["db"]
+  		@host, @port, @name, @user, @password = db_settings["host"],db_settings["port"], db_settings["name"],db_settings["user"], db_settings["password"]
+  		@views = []
+  		@server = CouchServerConnection.allocate
+    end
+    
     class CouchServerConnection
     	def initialize(args, options=nil)#host, port, user, password, options = nil)
     		@host = args["host"]
@@ -237,9 +219,13 @@ module ShyCouch
 
     	private
 
-    	def handle_error(req, res)
+    	def handle_failure(req, res)
     		raise RuntimeError.new("#{res.code}:#{res.message}\nMETHOD:#{req.method}\nURI:#{req.path}\n#{res.body}")
     	end
+    	
+    	def handle_error(e)
+    	  raise RuntimeError.new("#{e.inspect}\n Maybe be due to illegal rev or id change")
+  	  end
 
     	def request(req)
     		res = Net::HTTP.start(@host, @port) { |http|
@@ -247,11 +233,13 @@ module ShyCouch
     		  http.request(req)
     		  }
     		unless res.kind_of?(Net::HTTPSuccess)
-    			handle_error(req, res)
+    			handle_failure(req, res)
     		end
     		res
+  		rescue Errno::ECONNRESET => e
+  		  handle_error(e)
     	end
     end
-  
+
   end
 end

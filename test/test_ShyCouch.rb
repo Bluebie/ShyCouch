@@ -7,7 +7,8 @@ require_relative '../lib/ShyCouch'
 # Settings for a database that is set up and working, with an admin user
 $settings = {
   "db"=> {
-      "host" => "localhost",
+      "host" => "ramponeau.local",
+      # "host" => "localhost",
       "port" => 5984,
       "name" => "test",
       "user" => "cerales",
@@ -30,3 +31,5 @@ require_relative 'test_camping_integration'
 require_relative 'test_couchdb_factory'
 
 require_relative 'test_design_documents'
+
+require_relative 'test_views'

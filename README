@@ -1,14 +1,28 @@
 = ShyCouch
 
-ShyCouch is a Ruby library for CouchDB. It's a data persistence layer that uses native objects and a simple query language, designed primarily to replace ActiveRecord in Camping. A Python version is forthcoming.
+ShyCouch is a Ruby library for CouchDB. It's a data persistence layer that uses native objects and lets you write native Ruby blocks that'll be parsed into MapReduce JavaScript functions.
 
-I'm mainly putting this up for feedback at the moment. It's a complete mess.
+The structure is a bit of a mess, but essentially it provides:
 
-Eventually I'm gonna re-release it with all of Camping's code, with AR and stuff removed and this stuff put in.
+- a database object
+- a CouchDocument object, which is a glorified hash
+- a Design object representing the Design document for an app in CouchDB
 
-ShyCouch does not come with an elaborate query language. It'll automatically create an 'all' query for all your models (don't use it unless you have a really good excuse not to write a custom query, doing the filtering at the application layer is hell slow), but aside from that you have to write your own map and reduce functions.
+At the moment, all views have to be written manually. I'm currently evaluating the wisdom of building a query language to dynamically write views and cache them in Couch.
 
 = Usage
+
+	require 'shycouch'
+	settings = {
+	  "db"=> {
+	      "host" => "ramponeau.local",
+	      "port" => 5984,
+	      "name" => "food",
+	      "user" => "cerales",
+	      "password" => "password"
+	    },
+	}
+	db = ShyCouch::CouchDatabase()
 
 == Models
 
