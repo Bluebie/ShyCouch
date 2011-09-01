@@ -98,7 +98,7 @@ class CouchDocumentTests# < Test::Unit::TestCase
         assert(doc["_id"])
         assert(doc["_rev"])
         # get the new doc
-        newDoc = $couchdb.get_document(doc._id)
+        newDoc = $couchdb.pull_document(doc)
         # test equality of all the attributes aside from id and rev on the new document
         doc.attr_keys.each { |k|
           assert_equal(doc["k"], newDoc["k"])
@@ -120,7 +120,7 @@ class CouchDocumentTests# < Test::Unit::TestCase
         assert(res["ok"])
         
         # pull it from the database again
-        checkDoc = $couchdb.get_document(doc._id)
+        checkDoc = $couchdb.pull_document(doc)
         
         # check that the one from the database has all the new attributes
         assert_equal(doc.owner, checkDoc.owner)

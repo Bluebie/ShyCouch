@@ -11,13 +11,14 @@ module ShyCouch
       def initialize(hash={})
         # Assumes that the "kind" is the class name unless explicitly stated otherwise
         # TODO - maybe just force it to be the class name no matter what tbh
-        hash["kind"] = self.class.to_s unless hash["kind"]
+        hash["kind"] = self.class.to_s.split("::").last unless hash["kind"]
         merge!(hash)
         raise TypeError unless valid?
         # super(hash)
       end
     
       def self.all
+        
       end
       
       def self.needs(*requirements)
@@ -56,7 +57,7 @@ module ShyCouch
       end
     
       def pull(database=nil)
-        database = $database unless database
+        database ||= $couchdb
         new_doc = database.pull_document(self)
         if new_doc
           self.clear
@@ -65,10 +66,9 @@ module ShyCouch
       end
     
       def push(database = nil)
-        # assumes $database unless it receives a database argument
-        database = $couchdb unless database
+        database ||= $couchdb
         res = database.push_document(self)
-        self["_id"] = res["id"]
+        self["_id"] = res["id"] unless self["_id"]
         self["_rev"] = res["rev"]
         return res
       end
@@ -96,8 +96,12 @@ module ShyCouch
     
     class View
       attr_accessor :map, :reduce, :name
+      JS_MAP_FUNCTION_HEADER = "function ( doc ) { \n    "
+      JS_REDUCE_FUNCTION_HEADER = "function(key, values, rereduce) { \n    "
+      JS_FUNCTION_FOOTER = "}"
       
       def initialize(view_name, &block)
+        #O TODO - oh dear this is a nightmare
         @parser = ShyRubyJS::ShySexpParser.new
         sexp_check = block.to_sexp
         sexp = block.to_sexp(:strip_enclosure=>true)
@@ -112,11 +116,11 @@ module ShyCouch
           [1,2].each { |num|
             2.times { sexp[num].delete_at(1) }
           }
-          @map = @parser.parse(sexp[1])[0]
-          @reduce = @parser.parse(sexp[2]) if sexp[2].length > 1
+          @map = JS_MAP_FUNCTION_HEADER + @parser.parse(sexp[1])[0] + JS_FUNCTION_FOOTER
+          @reduce = JS_REDUCE_FUNCTION_HEADER + @parser.parse(sexp[2])[0] + JS_FUNCTION_FOOTER
         elsif sexp[0] == :iter
           raise ShyCouchError, "view must be called with map block and optional reduce block" unless sexp[1][2] == :map
-          @map = @parser.parse(sexp[3])
+          @map = JS_MAP_FUNCTION_HEADER + @parser.parse(sexp[3]) + JS_FUNCTION_FOOTER
         end
       end
       
@@ -126,22 +130,25 @@ module ShyCouch
         h.merge!({"reduce" => @reduce}) if @reduce
         return h
       end
+      
+      def functions
+        return {"map" => @map, "reduce" => @reduce}
+      end
     end
 
     class Design < CouchDocument
       # this is used to manage design documents
       # In practise, the Controllers should be a list of classes corresponding to design documents
       
-      def initialize(name)
+      def initialize(name, views=[])
         merge! "_id" => "_design/#{name.to_s}"
         @parser = ShyRubyJS::ShySexpParser.new
+        h = {"views" => {}}
+        views.each do |view|
+          h["views"][view.name] = view.functions
+        end
+        merge! h
       end
-      
-      def self.setup
-        # setup_all_view
-      end
-         
-      def push;end #must override push in order to set the ID
     end
 
   end

@@ -43,7 +43,7 @@ module ShyCouch
 	    init(settings)
   	end
 
-  	attr_accessor :server, :name, :host, :port, :views
+  	attr_accessor :server, :name, :host, :port, :design_documents
 
   	def connect
   		@server = CouchServerConnection.new({"host"=>@host, "port"=>@port, "user"=>@user, "password"=>@password})
@@ -65,12 +65,16 @@ module ShyCouch
   	def create
   		@server.create_db(@name)
   	end
-    def get_document(id)
-      @server.get_document(@name, id)
+    def get_document_by_id(id)
+      @server.get_document_by_id(@name, id)
+    end
+    def get_design_document_by_id(id)
+      doc = @server.get_document_by_id(@name, id)
+      ShyCouch::Data::Design.new(id).merge! doc
     end
     def all_docs
-      get_document('_all_docs').rows.map { |doc|
-        get_document(doc["id"])
+      get_document_by_id('_all_docs').rows.map { |doc|
+        get_document_by_id(doc["id"])
       }
     end
     def all_docs_with(attribute, value=nil)
@@ -92,27 +96,41 @@ module ShyCouch
     end
 
     def pull_document(document)
-      @server.push_document(self.name, document)      
+      @server.pull_document(self.name, document)      
     end
 
     def push_document(document)
       @server.push_document(self.name, document)
     end
     
-    def designs
-      @server.pull_all_design_docs(self.name)
+    def add_design_document(design)
+      @design_documents << design
     end
     
-    def views
-      designs.map{ |d| d["views"] }
+    def add_design_documents_and_push(*docs)
+      docs.each do |doc|
+        @design_documents << doc
+      end
+      push_design_documents
+    end
+    
+    def push_design_documents
+      @design_documents.each do |design|
+        design.push(self)
+      end
+    end
+    
+    def view(design, view_obj)
+      url = "#{design._id}/_view/#{view_obj.name}"
+      get_document_by_id(url)
     end
     
     private 
     
-    def init(settings)
+    def init(settings, design_documents = [])
 		  db_settings = settings["db"]
   		@host, @port, @name, @user, @password = db_settings["host"],db_settings["port"], db_settings["name"],db_settings["user"], db_settings["password"]
-  		@views = []
+  		@design_documents = design_documents
   		@server = CouchServerConnection.allocate
     end
     
@@ -155,7 +173,7 @@ module ShyCouch
     	end
 
       def pull_all_design_docs(db_name)
-        pull_all_doc_ids(db_name).map { get_document(db_name, id) if id[0,7] == "_design" }
+        pull_all_doc_ids(db_name).map { get_document_by_id(db_name, id) if id[0,7] == "_design" }
       end
 
     	def pull_all_doc_ids(db_name)
@@ -166,9 +184,12 @@ module ShyCouch
     	  pull_all_doc_ids(db_name).map { |id| Data::CouchDocument.new(get("/#{db_name}/#{id}")) }
     	end
 
-    	def get_document(db_name, id)
+    	def get_document_by_id(db_name, id)
     		document = Data::CouchDocument.new(get("/#{db_name}/#{id}"))
     	end
+    	def pull_document(db_name, document)
+    		document = Data::CouchDocument.new(get("/#{db_name}/#{document._id}"))  	    
+	    end
 
     	def delete_document(db_name, id)
     		delete("/#{db_name}/#{id}")
@@ -192,12 +213,10 @@ module ShyCouch
     	  #TODO - return success more meaningfully maybe?
   	  end
   	
-  	  def pull_document(db_name, document)
-    		document = Data::CouchDocument.new(get("/#{db_name}/#{id}"))  	    
-	    end
+
   	
     	def push_document(db_name, document)
-    	  raise TypeError unless document.class == Data::CouchDocument
+    	  raise TypeError unless document.kind_of?(Data::CouchDocument)
     	  raise JSON::GeneratorError unless document.valid?
     	  if document["_rev"]
     	    put("/#{db_name}/#{document._id}?rev=#{document._rev}/", document.to_json)
