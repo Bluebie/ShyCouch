@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{ShyCouch}
-  s.version = "0.4.1"
+  s.version = "0.4.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = [%q{Shy Inc.}, %q{Daniel Bryan}, %q{Cerales}]
-  s.date = %q{2011-08-28}
+  s.date = %q{2011-09-01}
   s.description = %q{Ruby API for CouchDB, designed to work with the Camping micro-framework.}
   s.email = %q{danbryan@gmail.com}
   s.extra_rdoc_files = [
@@ -32,7 +32,6 @@ Gem::Specification.new do |s|
     "test/old-test.rb",
     "test/old-tests.rb",
     "test/test_ShyCouch.rb",
-    "test/test_camping_integration.rb",
     "test/test_couch_document.rb",
     "test/test_couchdb_api.rb",
     "test/test_couchdb_factory.rb",
