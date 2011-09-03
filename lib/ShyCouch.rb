@@ -12,7 +12,7 @@ require 'net/http'
 require 'json'
 require 'resolv'
 # require 'shyrubyjs'
-require '~/dev/gems/ShyRubyJS/lib/ShyRubyJS'
+require 'ShyRubyJS'
 # require everything from the 'ShyCouch' subdirectory
 Dir.new(File.dirname(__FILE__)+'/ShyCouch').each { |f| require 'shycouch/' + f.split('.')[0] unless f == '.' or f == '..' }
 
