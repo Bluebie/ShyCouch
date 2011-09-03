@@ -12,7 +12,7 @@ At the moment, all views have to be written manually. I'm currently evaluating t
 
 = Usage
 
-	require 'shycouch'
+	require 'ShyCouch'
 	settings = {
 	  "db"=> {
 	      "host" => "ramponeau.local",
@@ -96,10 +96,7 @@ Views give you back a special JSON hash where you can treat the keys as object a
 ShyCouch uses the related ShyRubyJS library to parse Ruby blocks as JavaScript. This means you can do this:
 
 	map do
-	  def function(doc)
-	    if doc.kind == "post" and !doc.hidden
-	      emit(doc)
-	  end
+	  emit(doc) if doc.kind == "post" and !doc.hidden
 	end
 
 and you'll get this:
